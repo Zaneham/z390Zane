@@ -14,27 +14,28 @@
 .* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 .* GNU General Public License for more details.
 .*
-.* You should have received a copy of the GNU General Public License 
+.* You should have received a copy of the GNU General Public License
 .* along with this program; if not, see https://www.gnu.org/licenses.
 .*********************************************************************
 .* Author - Don Higgins                                              *
 .* Date   - 04/07/08                                                 *
 .*********************************************************************
-.* 02/16/09 initial coding for GEN_ONSIZE_START shared by GEN ADD-MPY   
+.* 02/16/09 initial coding for GEN_ONSIZE_START shared by GEN ADD-MPY
+.* 2025/12 ZH: NOT ON SIZE ERROR per FIPS 6.4.2 - jump to _NOT label
 .*********************************************************************
-         GEN_ONSIZE_START &TYPE   
+         GEN_ONSIZE_START &TYPE
          COPY  ZC_WS
-         AIF   ('&TYPE' EQ 'ADD') 
-         J     PG_ADD_&ADD_LAB             SKIP ON SIZE ERROR
+         AIF   ('&TYPE' EQ 'ADD')
+         J     PG_ADD_&ADD_LAB._NOT        SKIP TO NOT ON SIZE OR END
                GEN_LABEL ADD_&ADD_LAB._ON_SIZE,ON_SIZE_ERROR_START
          AELSEIF ('&TYPE' EQ 'SUB')
-         J     PG_SUBTRACT_&SUB_LAB        SKIP ON SIZE ERROR
+         J     PG_SUBTRACT_&SUB_LAB._NOT   SKIP TO NOT ON SIZE OR END
                GEN_LABEL SUBTRACT_&SUB_LAB._ON_SIZE,ON_SIZE_ERROR_START
          AELSEIF ('&TYPE' EQ 'MPY')
-         J     PG_MULTIPLY_&MPY_LAB        SKIP ON SIZE ERROR
+         J     PG_MULTIPLY_&MPY_LAB._NOT   SKIP TO NOT ON SIZE OR END
                GEN_LABEL MULTIPLY_&MPY_LAB._ON_SIZE,ON_SIZE_ERROR_START
          AELSEIF ('&TYPE' EQ 'DIV')
-         J     PG_DIVIDE_&DIV_LAB          SKIP ON SIZE ERROR
+         J     PG_DIVIDE_&DIV_LAB._NOT     SKIP TO NOT ON SIZE OR END
                GEN_LABEL DIVIDE_&DIV_LAB._ON_SIZE,ON_SIZE_ERROR_START
          AELSE
                MNOTE 8,'GEN_ONSIZE_START UNKNOWN TYPE - &TYPE'

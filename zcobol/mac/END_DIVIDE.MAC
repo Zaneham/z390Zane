@@ -14,21 +14,26 @@
 .* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 .* GNU General Public License for more details.
 .*
-.* You should have received a copy of the GNU General Public License 
+.* You should have received a copy of the GNU General Public License
 .* along with this program; if not, see https://www.gnu.org/licenses.
 .*********************************************************************
 .* Author - Don Higgins                                              *
 .* Date   - 04/15/08                                                 *
 .*********************************************************************
-.* 01/11/09 initial coding                              
+.* 01/11/09 initial coding
+.* 2025/12 ZH: Support NOT ON SIZE ERROR per FIPS PUB 21-2 Sec 6.4.2
 .*********************************************************************
-         END_DIVIDE    
+         END_DIVIDE
          COPY  ZC_WS
-         AIF   (&IE_LVL LT 1)       
+         AIF   (&IE_LVL LT 1)
                MEXIT
          AEND
          AIF   (&IE_TYPE(&IE_LVL) EQ 14) IS THERE ON SIZE/ERROR
-               GEN_LABEL DIVIDE_&IE_TCNT(&IE_LVL),END_DIVIDE
+               AIF (&IE_NOT(&IE_LVL) NE 1)
+               GEN_LABEL DIVIDE_&IE_TCNT(&IE_LVL)._NOT,NOT_OSIZE
+               AEND
+               GEN_LABEL DIVIDE_&IE_TCNT(&IE_LVL),END_DIV
+               :&IE_NOT(&IE_LVL) SETA 0
                :&IE_LVL  SETA  &IE_LVL-1
          AEND
          MEND

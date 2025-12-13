@@ -129,7 +129,7 @@
                AIF     ('&SYSLIST(&PARM_IX)' EQ 'ON'                   X
                         AND '&SYSLIST(&PARM_IX+1)' EQ 'SIZE'           X
                         AND '&SYSLIST(&PARM_IX+2)' EQ 'ERROR') RPI 1065
-                     :&ON_SIZE SETB 1      
+                     :&ONSIZE SETB 1      
                      AIF (&LAST_PARM EQ 0)
                          :&LAST_PARM SETA &PARM_IX-1
                      AEND                              

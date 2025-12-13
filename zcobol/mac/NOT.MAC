@@ -14,15 +14,54 @@
 .* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 .* GNU General Public License for more details.
 .*
-.* You should have received a copy of the GNU General Public License 
+.* You should have received a copy of the GNU General Public License
 .* along with this program; if not, see https://www.gnu.org/licenses.
 .*********************************************************************
 .* Author - Don Higgins                                              *
 .* Date   - 04/16/08                                                 *
 .*********************************************************************
-.* 11/17/08 stub for pending support              
+.* 11/17/08 stub for pending support
+.* 2025/12 ZH: Implement NOT ON SIZE ERROR per FIPS PUB 21-2 Sec 6.4.2
 .*********************************************************************
          NOT
-         MNOTE 8,'NOT ON IS NOT SUPPORTED YET'
-         MEXIT
+         COPY  ZC_WS
+.*
+.* Check for NOT ON SIZE ERROR pattern
+.*
+         AIF   ('&SYSLIST(1)' NE 'ON')
+               MNOTE 8,'NOT - UNSUPPORTED CLAUSE'
+               MEXIT
+         AEND
+         AIF   ('&SYSLIST(2)' NE 'SIZE')
+               MNOTE 8,'NOT - UNSUPPORTED CLAUSE'
+               MEXIT
+         AEND
+         AIF   ('&SYSLIST(3)' NE 'ERROR')
+               MNOTE 8,'NOT - UNSUPPORTED CLAUSE'
+               MEXIT
+         AEND
+.*
+.* NOT ON SIZE ERROR - check if in arithmetic ON SIZE ERROR context
+.* IE_TYPE: 11=ADD, 12=SUBTRACT, 13=MULTIPLY, 14=DIVIDE
+.*
+         AIF (&IE_LVL LT 1)
+               MNOTE 8,'NOT ON SIZE ERROR WITHOUT ARITHMETIC STMT'
+               MEXIT
+         AEND
+         :&IE_NOT(&IE_LVL) SETA 1
+         AIF   (&IE_TYPE(&IE_LVL) EQ 11)
+         J     PG_ADD_&IE_TCNT(&IE_LVL)
+               GEN_LABEL ADD_&IE_TCNT(&IE_LVL)._NOT,NOT_OSIZE
+         AELSEIF (&IE_TYPE(&IE_LVL) EQ 12)
+         J     PG_SUBTRACT_&IE_TCNT(&IE_LVL)
+               GEN_LABEL SUBTRACT_&IE_TCNT(&IE_LVL)._NOT,NOT_OSIZE
+         AELSEIF (&IE_TYPE(&IE_LVL) EQ 13)
+         J     PG_MULTIPLY_&IE_TCNT(&IE_LVL)
+               GEN_LABEL MULTIPLY_&IE_TCNT(&IE_LVL)._NOT,NOT_OSIZE
+         AELSEIF (&IE_TYPE(&IE_LVL) EQ 14)
+         J     PG_DIVIDE_&IE_TCNT(&IE_LVL)
+               GEN_LABEL DIVIDE_&IE_TCNT(&IE_LVL)._NOT,NOT_OSIZE
+         AELSE
+               MNOTE 8,'NOT ON SIZE ERROR - INVALID CONTEXT'
+         AEND
          MEND
