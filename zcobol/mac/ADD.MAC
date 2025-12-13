@@ -35,7 +35,7 @@
          :&ROUNDED   SETB 0
          :&ONSIZE    SETB 0
          :&LAST_PARM SETA 0
-         AWHILE (&PARM_IX LT &NP)
+         AWHILE (&PARM_IX LE &NP)
                ACTR 10000
                AIF ('&SYSLIST(&PARM_IX)' EQ 'TO')
                    :&TO_IX SETA &PARM_IX
