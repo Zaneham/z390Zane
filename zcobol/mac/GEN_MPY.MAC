@@ -290,12 +290,15 @@
 .* MPY_NUM_LIT Z
 .*
       AWHEN C'Z'
-         :&PLEN SETA &L_TARGET/2+1
-         ZC_PACK31  ZCVT_PWORK1,&PLEN,&N_TARGET,&L_TARGET
          :&LPNUM SETA (K'&NUM/2+3)/2*2 ROUNDED EVEN FOR LARL
          AIF (&LPNUM GT 16)
              :&LPNUM SETA 16
          AEND
+         :&PLEN SETA &L_TARGET/2+&LPNUM+1
+         AIF (&PLEN GT 16)
+             :&PLEN SETA 16
+         AEND
+         ZC_PACK31  ZCVT_PWORK1,&PLEN,&N_TARGET,&L_TARGET
          LARL  ZC_R14,=PL&LPNUM'&NUM'
          MP    ZCVT_PWORK1(&PLEN),0(&LPNUM,ZC_R14)
                AIF (&SCALE GT 0)              
@@ -1288,10 +1291,18 @@
                     MNOTE 8,'GEN_MPY INVALID SOURCE DATA TYPE &N_SOURCEX
                '           
                     MEXIT
-                AEND 
-               :&PLEN1 SETA &L_TARGET/2+1
+                AEND
+               :&PLEN2 SETA &L_SOURCE/2+1
+               AIF (&PLEN2 GT 8)
+                   :&PLEN2 SETA 8
+               AEND
+               :&PLEN1 SETA (&L_TARGET+&L_SOURCE)/2+2
+               AIF (&PLEN1 GT 16)
+                   :&PLEN1 SETA 16
+               AEND
+               :&OFF2 SETA 16-&PLEN2
                ZC_PACK31 ZCVT_PWORK1,&PLEN1,&N_TARGET,&L_TARGET
-         MP    ZCVT_PWORK1(&PLEN1),ZCVT_PWORK2
+         MP    ZCVT_PWORK1(&PLEN1),&OFF2+ZCVT_PWORK2(&PLEN2)
                AIF (&SCALE GT 0)              
          SRP ZCVT_PWORK1(&PPLEN1),&SCALE,0                  
                AELSEIF (&SCALE LT 0)          
