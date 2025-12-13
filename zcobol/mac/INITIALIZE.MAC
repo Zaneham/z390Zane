@@ -14,13 +14,132 @@
 .* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 .* GNU General Public License for more details.
 .*
-.* You should have received a copy of the GNU General Public License 
+.* You should have received a copy of the GNU General Public License
 .* along with this program; if not, see https://www.gnu.org/licenses.
-.* Author.  Don Higgins                                              *
+.* Author - Don Higgins                                              *
 .* Date   - 04/07/08                                                 *
 .*********************************************************************
-.* 06/13/08 INITIALIZE not supported yet                
+.* 06/13/08 INITIALIZE not supported yet
+.* 12/10/25 ZH: Full implementation per FIPS PUB 21-2 Section VI-6.17
+.* 12/13/25 ZH: Fix AWHILE/AIF continuation format issues
 .*********************************************************************
-         INITIALIZE 
-         MNOTE 8,'INITIALIZE NOT SUPPORTED YET'
+.* INITIALIZE identifier-1 [REPLACING ...]
+.*
+.* Per FIPS PUB 21-2 Section VI-6.17.4 General Rule 5:
+.* Alphabetic/Alphanumeric/Alphanumeric-edited -> SPACES
+.* Numeric/Numeric-edited -> ZEROS
+.*********************************************************************
+         INITIALIZE
+         COPY  ZC_WS
+         GBLC  &INIT_VAL
+         GBLA  &INIT_START_IX
+         GBLA  &INIT_START_LVL
+         GBLA  &INIT_CUR_IX
+         GBLB  &INIT_DONE
+         :&PARM_IX SETA 1
+         :&INIT_DONE SETB 0
+.*
+.* PROCESS EACH IDENTIFIER IN THE INITIALIZE STATEMENT
+.*
+         AWHILE (&INIT_DONE EQ 0)
+               ACTR 4096
+               AIF ('&SYSLIST(&PARM_IX)' EQ '')
+                   :&INIT_DONE SETB 1
+                   AEXIT AWHILE
+               AEND
+               AIF ('&SYSLIST(&PARM_IX)' EQ 'REPLACING')
+                   MNOTE 4,'INITIALIZE REPLACING not yet implemented'
+                   :&INIT_DONE SETB 1
+                   AEXIT AWHILE
+               AEND
+               :&FIELD_REG SETC 'ZC_R2'
+               :&FIELD_SS1 SETB 1
+               ACALL GET_PARM_FIELD
+               AIF (&FIELD_IX EQ 0)
+                   MNOTE 8,'INITIALIZE FIELD NOT FOUND - &SYSLIST(1)'
+                   MEXIT
+               AEND
+.*
+.* SET UP FOR PROCESSING
+.*
+               :&INIT_START_IX  SETA &FIELD_IX
+               :&INIT_START_LVL SETA &SYM_LVL(&FIELD_IX)
+               :&INIT_CUR_IX    SETA &FIELD_IX
+.*
+.* CHECK IF GROUP (HAS SUBORDINATES) OR ELEMENTARY
+.*
+               AIF (&INIT_CUR_IX LT &SYM_TOT)
+                   AIF (&SYM_LVL(&INIT_CUR_IX+1) GT &INIT_START_LVL)
+.*                     This is a group - iterate through subordinates
+                       :&INIT_CUR_IX SETA &INIT_CUR_IX+1
+                       ACALL INIT_GROUP_ITEMS
+                   AELSE
+.*                     This is an elementary item
+                       ACALL INIT_ELEMENTARY_ITEM
+                   AEND
+               AELSE
+.*                 Last symbol - must be elementary
+                   ACALL INIT_ELEMENTARY_ITEM
+               AEND
+         AEND
+         MEXIT
+.*
+.*********************************************************************
+.* INIT_GROUP_ITEMS - Process subordinate items in a group
+.*********************************************************************
+         AENTRY INIT_GROUP_ITEMS
+         AWHILE (&INIT_CUR_IX LE &SYM_TOT)
+               ACTR 4096
+               AIF (&SYM_LVL(&INIT_CUR_IX) LE &INIT_START_LVL)
+                   AEXIT AWHILE
+               AEND
+               ACALL INIT_ELEMENTARY_ITEM
+               :&INIT_CUR_IX SETA &INIT_CUR_IX+1
+         AEND
+         AEND
+.*
+.*********************************************************************
+.* INIT_ELEMENTARY_ITEM - Initialize a single elementary data item
+.* Per FIPS PUB 21-2 Section VI-6.17.4 General Rules 3 and 5:
+.* - Index data items and FILLER are NOT affected
+.* - Alphabetic/Alphanumeric -> SPACES
+.* - Numeric -> ZEROS
+.*********************************************************************
+         AENTRY INIT_ELEMENTARY_ITEM
+.*
+.* Skip FILLER items (per General Rule 3)
+.*
+         AIF ('&SYM_NAME(&INIT_CUR_IX)' EQ 'FILLER')
+             AEXIT AENTRY
+         AEND
+.*
+.* Skip Index data items (PIC type I)
+.*
+         AIF ('&SYM_PIC_TYPE(&INIT_CUR_IX)' EQ 'I')
+             AEXIT AENTRY
+         AEND
+.*
+.* Skip group items (no PIC means group)
+.*
+         AIF ('&SYM_PIC(&INIT_CUR_IX)' EQ '')
+             AEXIT AENTRY
+         AEND
+.*
+.* Determine initialization value based on PIC type
+.* Default to ZEROS, change to SPACES for A or X types
+.*
+         :&INIT_VAL SETC 'ZEROS'
+         AIF ('&SYM_PIC_TYPE(&INIT_CUR_IX)' EQ 'A')
+             :&INIT_VAL SETC 'SPACES'
+         AEND
+         AIF ('&SYM_PIC_TYPE(&INIT_CUR_IX)' EQ 'X')
+             :&INIT_VAL SETC 'SPACES'
+         AEND
+.*
+.* Generate the MOVE statement
+.*
+         GEN_MOVE &SYM_NAME(&INIT_CUR_IX),&INIT_CUR_IX,&INIT_VAL,0
+         AEND
+.*
+         COPY ZCGETFLD
          MEND
