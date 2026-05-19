@@ -79,5 +79,6 @@
            IF FAIL-COUNT = 0
                DISPLAY 'TESTSRCH - ALL TESTS PASSED'
            ELSE
-               DISPLAY 'TESTSRCH - SOME TESTS FAILED'.
+               DISPLAY 'TESTSRCH - SOME TESTS FAILED'
+               MOVE 8 TO RETURN-CODE.
            STOP RUN.
